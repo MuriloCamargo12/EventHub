@@ -1,0 +1,70 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+model User {
+  id Int @id @default(autoincrement())
+  name String 
+  email String @unique
+  password String
+  events Event[]
+  reservations Reservation[]
+  sessions Session[]
+
+  @@map("users")
+}
+
+model Session {
+  id Int @id @default(autoincrement())
+  token String @unique
+  userId Int
+  expiresAt DateTime
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("sessions")
+}
+
+model Event {
+  id Int @id @default(autoincrement())
+  title String
+  description String
+  date DateTime
+  city String
+  location String
+  category String
+  capacity Int
+  organizerId Int
+  organizer User @relation(fields: [organizerId], references: [id])
+  reservations Reservation[]
+
+  @@map("events")
+}
+
+model Reservation {
+  id Int @id @default(autoincrement())
+  userId Int
+  eventId Int
+  status ReservationStatus @default(reserved)
+  createdAt DateTime @default(now())
+  attended Boolean @default(false)
+  user User @relation(fields: [userId], references: [id])
+  event Event @relation(fields: [eventId], references: [id])
+
+  @@unique([userId, eventId])
+  @@map("reservations") 
+}
+
+enum ReservationStatus {
+  reserved
+  cancelled
+}

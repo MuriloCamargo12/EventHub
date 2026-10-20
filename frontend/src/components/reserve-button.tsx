@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ApiError } from "@/lib/api/client";
 import { createReservation } from "@/lib/api/reservations";
+import { useNotice } from "@/lib/use-notice";
 
 export function ReserveButton({
     eventId,
@@ -15,7 +15,7 @@ export function ReserveButton({
     isLoggedIn: boolean;
 }) {
     const router = useRouter();
-    const [notice, setNotice] = useState("")
+    const { notice, showNotice, showError } = useNotice();
 
     async function onReserve() {
         if (!isLoggedIn) {
@@ -25,17 +25,17 @@ export function ReserveButton({
 
         try {
             await createReservation(eventId);
-            setNotice("Reserva feita com sucesso!")
+            showNotice("Reserva feita com sucesso!")
         } catch (error) {
             if (error instanceof ApiError && error.status === 401) {
                 router.push("/cadastro");
                 return;
             }
             if (error instanceof ApiError && error.status === 409 && error.message === "Você já reservou este evento!") {
-                setNotice("Você já reservou este evento.");
+                showError("Você já reservou este evento.");
                 return;
             }
-            setNotice("Erro ao fazer reserva")
+            showError("Erro ao fazer reserva")
         }
     }
 

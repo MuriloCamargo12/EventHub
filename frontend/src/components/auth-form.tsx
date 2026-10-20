@@ -1,19 +1,17 @@
 "use client";
 
-import { useState } from "react";
 import { loginUser, registerUser } from "@/lib/api/users";
-import { useRouter } from "next/navigation";
+import { useNotice } from "@/lib/use-notice";
 
 const inputClass = "rounded-xl border border-stone-300 px-3 py-2 text-stone-950";
 
 export function AuthForm({ mode }: { mode: "login" | "register" }) {
-  const [notice, setNotice] = useState("");
+  const { notice, showNotice, showError, clearNotice } = useNotice();
   const isRegister = mode === "register";
-
-  const router = useRouter();
 
   async function onSubmit(formEvent: React.FormEvent<HTMLFormElement>) {
     formEvent.preventDefault();
+    clearNotice();
     const formData = new FormData(formEvent.currentTarget);
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
@@ -21,14 +19,13 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
       if (isRegister) {
         const name = formData.get("name") as string;
         const user = await registerUser({ name, email, password });
-        setNotice(`Conta criada, ${user.name}. Entre para continuar.`);
+        showNotice(`Conta criada, ${user.name}. Entre para continuar.`);
         return;
       }
-      const user = await loginUser({ email, password });
-      setNotice(`Olá, ${user.name}!`);
-      router.refresh();
+      await loginUser({ email, password });
+      window.location.assign("/");
     } catch {
-      setNotice(isRegister ? "Não foi possível cadastrar." : "E-mail ou senha inválidos");
+      showError(isRegister ? "Não foi possível cadastrar." : "E-mail ou senha inválidos");
     }
   }
 

@@ -5,12 +5,13 @@ import { useRouter } from "next/navigation";
 import { toDateTimeLocal, type EventItem } from "../lib/api/types";
 import { ApiError } from "@/lib/api/client";
 import { createEvent, updateEvent } from "@/lib/api/events";
+import { useNotice } from "@/lib/use-notice";
 
 const inputClass = "rounded-xl border border-stone-300 px-3 py-2 text-stone-950";
 
 export function EventForm({ event }: { event?: EventItem }) {
   const router = useRouter();
-  const [notice, setNotice] = useState("");
+  const { notice, showNotice, showError, clearNotice } = useNotice();
   const [pending, setPending] = useState(false);
 
   async function onSubmit(formEvent: React.FormEvent<HTMLFormElement>) {
@@ -18,7 +19,7 @@ export function EventForm({ event }: { event?: EventItem }) {
     formEvent.preventDefault();
     if (pending) return;
     setPending(true);
-    setNotice("");
+    clearNotice();
 
     const formData = new FormData(formEvent.currentTarget);
 
@@ -34,7 +35,7 @@ export function EventForm({ event }: { event?: EventItem }) {
     try {
       if (event) {
         const updated = await updateEvent(event.id, body);
-        setNotice(`Evento atualizado: ${updated.id}`);
+        showNotice(`Evento atualizado: ${updated.id}`);
         setPending(false);
         return;
       }
@@ -46,7 +47,7 @@ export function EventForm({ event }: { event?: EventItem }) {
         router.push("/cadastro");
         return;
       }
-      setNotice("Não foi possível salvar o evento.");
+      showError("Não foi possível salvar o evento.");
     }
   }
 

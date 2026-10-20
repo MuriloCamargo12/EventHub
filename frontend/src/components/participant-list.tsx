@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useNotice } from "@/lib/use-notice";
 import { formatDate, type ParticipantItem } from "../lib/api/types";
 import { ApiError } from "@/lib/api/client";
 import { markAttendance } from "@/lib/api/reservations";
@@ -9,7 +10,7 @@ import { markAttendance } from "@/lib/api/reservations";
 export function ParticipantList({ participants }: { participants: ParticipantItem[] }) {
   const router = useRouter();
   const [rows, setRows] = useState(participants);
-  const [notice, setNotice] = useState("");
+  const { notice, showError } = useNotice();
 
   async function markAttended(id: number) {
     try {
@@ -22,7 +23,7 @@ export function ParticipantList({ participants }: { participants: ParticipantIte
         router.push("/cadastro");
         return;
       }
-      setNotice("Não foi possível marcar a presença.");
+      showError("Não foi possível marcar a presença.");
     }
   }
 

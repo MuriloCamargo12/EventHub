@@ -1,13 +1,13 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ApiError } from "@/lib/api/client";
 import { cancelReservation } from "@/lib/api/reservations";
+import { useNotice } from "@/lib/use-notice";
 
 export function CancelReservationButton({ reservationId }: { reservationId: number }) {
   const router = useRouter();
-  const [notice, setNotice] = useState("");
+  const { notice, showError } = useNotice();
   async function onCancel() {
     try {
       await cancelReservation(reservationId);
@@ -17,7 +17,7 @@ export function CancelReservationButton({ reservationId }: { reservationId: numb
         router.push("/cadastro");
         return;
       }
-      setNotice("Não foi possível cancelar.");
+      showError("Não foi possível cancelar.");
     }
   }
   return (

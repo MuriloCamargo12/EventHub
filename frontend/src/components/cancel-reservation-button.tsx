@@ -5,7 +5,13 @@ import { ApiError } from "@/lib/api/client";
 import { cancelReservation } from "@/lib/api/reservations";
 import { useNotice } from "@/lib/use-notice";
 
-export function CancelReservationButton({ reservationId }: { reservationId: number }) {
+export function CancelReservationButton({
+  reservationId,
+  className = "mt-4",
+}: {
+  reservationId: number;
+  className?: string;
+}) {
   const router = useRouter();
   const { notice, showError } = useNotice();
   async function onCancel() {
@@ -21,7 +27,7 @@ export function CancelReservationButton({ reservationId }: { reservationId: numb
     }
   }
   return (
-    <div className="mt-4">
+    <div className={className}>
       <button
         type="button"
         onClick={onCancel}

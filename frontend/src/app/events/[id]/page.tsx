@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { formatDate } from "../../../lib/api/types";
 import { ApiError } from "@/lib/api/client";
 import { GetEventsId } from "@/lib/api/events";
+import { getMyReservations } from "@/lib/api/reservations";
 import { getMe } from "@/lib/api/users";
 import Link from "next/link";
 import { ReserveButton } from "@/components/reserve-button";
@@ -33,6 +34,21 @@ export default async function EventPage({ params }: EventPageProps) {
   }
 
   const isOrganizer = user?.id === event.organizerId;
+  const ended = new Date(event.date).getTime() < Date.now();
+
+  let reservationId: number | undefined;
+  if (session && user) {
+    try {
+      const reservations = await getMyReservations(session);
+      reservationId = reservations.find(
+        (reservation) => reservation.event.id === event.id && reservation.status === "reserved",
+      )?.id;
+    } catch (error) {
+      if (!(error instanceof ApiError) || error.status !== 401) {
+        throw error;
+      }
+    }
+  }
 
   return (
     <article className="max-w-2xl">
@@ -54,7 +70,13 @@ export default async function EventPage({ params }: EventPageProps) {
       </p>
       <div className="mt-8 flex flex-wrap gap-3">
 
-        <ReserveButton eventId={event.id} soldOut={event.soldOut} isLoggedIn={Boolean(user)} />
+        <ReserveButton
+          eventId={event.id}
+          soldOut={event.soldOut}
+          isLoggedIn={Boolean(user)}
+          ended={ended}
+          reservationId={reservationId}
+        />
 
         {isOrganizer ? (
           <>

@@ -37,7 +37,7 @@ model Session {
 model Event {
   id Int @id @default(autoincrement())
   title String
-  description String
+  description String @db.Text
   date DateTime
   city String
   location String

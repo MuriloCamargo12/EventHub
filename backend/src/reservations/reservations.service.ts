@@ -4,66 +4,65 @@ import { prisma } from '../lib/prisma.js';
 @Injectable()
 export class ReservationsService {
     async create(eventId: number, userId: number) {
-        const event = await prisma.event.findUnique({
-            where: { id: eventId },
-        })
-
-        if(!event) {
-            throw new NotFoundException("Evento não encontrado!")
-        }
-
-        const existing = await prisma.reservation.findUnique({
-            where: {
-                userId_eventId: {userId, eventId },
+        return prisma.$transaction(async (tx) => {
+            const rows = await tx.$queryRaw<{ id: number; capacity: number; date: Date }[]>`
+            SELECT id, capacity, date FROM events WHERE id = ${eventId} FOR UPDATE
+            `;
+            const event = rows[0];
+            if (!event) {
+                throw new NotFoundException("Evento não encontrado!");
             }
-        })
 
-        if(existing?.status === 'reserved') {
-            throw new ConflictException("Você já reservou este evento!")
-        }
-
-        const reservedCount = await prisma.reservation.count({
-            where: {
-                eventId,
-                status: 'reserved',
+            if (event.date.getTime() < Date.now()) {
+                throw new ConflictException("Este evento já encerrou!");
             }
-        })
-
-        if(reservedCount >= event.capacity) {
-            throw new ConflictException("Evento lotado!")
-        }
-
-        if(existing) {
-            return prisma.reservation.update({
-                where: { id: existing.id },
-                data: {
-                    status: 'reserved',
-                    attended: false,
+            const existing = await tx.reservation.findUnique({
+                where: {
+                    userId_eventId: { userId, eventId },
                 },
-            })
-        }
-
-        return prisma.reservation.create({
-            data: {
-                userId,
-                eventId,
-                status: 'reserved',
+            });
+            if (existing?.status === "reserved") {
+                throw new ConflictException("Você já reservou este evento!");
             }
-        })
-
+            const reservedCount = await tx.reservation.count({
+                where: {
+                    eventId,
+                    status: "reserved",
+                },
+            });
+            if (reservedCount >= event.capacity) {
+                throw new ConflictException("Evento lotado!");
+            }
+            if (existing) {
+                return tx.reservation.update({
+                    where: { id: existing.id },
+                    data: {
+                        status: "reserved",
+                        attended: false,
+                    },
+                });
+            }
+            return tx.reservation.create({
+                data: {
+                    userId,
+                    eventId,
+                    status: "reserved",
+                },
+            });
+        });
     }
 
     async cancel(id: number, userId: number) {
         const reservation = await prisma.reservation.findUnique({
             where: { id },
         });
-        if(!reservation) {
+        if (!reservation) {
             throw new NotFoundException("Reserva não encontrada!")
         }
-        if(reservation.userId !== userId) {
+        if (reservation.userId !== userId) {
             throw new ForbiddenException("Você não pode cancelar esta reserva!")
         }
-        if(reservation.status === 'cancelled') {
+        if (reservation.status === 'cancelled') {
             throw new ConflictException("Reserva já cancelada!")
         }
 
@@ -99,11 +98,11 @@ export class ReservationsService {
             where: { id: eventId },
         })
 
-        if(!event) {
+        if (!event) {
             throw new NotFoundException("Evento não encontrado!")
         }
 
-        if(event.organizerId !== userId) {
+        if (event.organizerId !== userId) {
             throw new ForbiddenException("Você não organiza este evento!")
         }
 
@@ -132,28 +131,28 @@ export class ReservationsService {
     }
     async markAttendance(id: number, userId: number) {
         const reservation = await prisma.reservation.findUnique({
-          where: { id },
-          include: {
-            event: {
-              select: { organizerId: true },
+            where: { id },
+            include: {
+                event: {
+                    select: { organizerId: true },
+                },
             },
-          },
         });
         if (!reservation) {
-          throw new NotFoundException('Reserva não encontrada!');
+            throw new NotFoundException('Reserva não encontrada!');
         }
         if (reservation.event.organizerId !== userId) {
-          throw new ForbiddenException('Você não organiza este evento!');
+            throw new ForbiddenException('Você não organiza este evento!');
         }
         if (reservation.status === 'cancelled') {
-          throw new ConflictException('Reserva cancelada não pode ter presença!');
+            throw new ConflictException('Reserva cancelada não pode ter presença!');
         }
         if (reservation.attended) {
-          throw new ConflictException('Presença já marcada!');
+            throw new ConflictException('Presença já marcada!');
         }
         return prisma.reservation.update({
-          where: { id },
-          data: { attended: true },
+            where: { id },
+            data: { attended: true },
         });
-      }
+    }
 }

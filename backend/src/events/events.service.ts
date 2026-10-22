@@ -10,9 +10,10 @@ export class EventsService {
         const events = await prisma.event.findMany({
             where: {
                 city: filters.city ? { contains: filters.city } : undefined,
-                category: filters.category,
+                category: filters.category ? { contains: filters.category } : undefined,
                 date: filters.date ? this.dayRange(filters.date) : undefined,
             },
+            orderBy: { date: "asc" },
             include: {
                 _count: {
                     select: {

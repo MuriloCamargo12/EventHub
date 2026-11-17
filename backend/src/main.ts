@@ -9,7 +9,7 @@ async function bootstrap() {
   app.enableCors({
     origin: [
       "http://localhost:3000",
-      "https://event-hub-eight.vercel.app/",
+      "https://event-hub-eight.vercel.app",
     ],
     credentials: true,
   })

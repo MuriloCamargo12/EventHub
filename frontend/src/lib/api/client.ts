@@ -1,4 +1,7 @@
-const API_URL = process.env.API_URL || 'http://localhost:4000'
+const API_URL =
+    typeof window === "undefined"
+        ? process.env.API_URL || "http://localhost:4000"
+        : "/api";
 
 export class ApiError extends Error {
     status: number;

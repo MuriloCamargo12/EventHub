@@ -7,7 +7,10 @@ import cookieParser from 'cookie-parser';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.enableCors({
-    origin: 'http://localhost:3000',
+    origin: [
+      "http://localhost:3000",
+      "https://event-hub-eight.vercel.app/",
+    ],
     credentials: true,
   })
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
